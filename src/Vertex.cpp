@@ -1,4 +1,3 @@
-#pragma once
 #include "Vertex.h"
 
-Vertex::Vertex(float x, float y, float z) : position(x, y, z) {};
+Vertex::Vertex(float x, float y, float z) : position(x, y, z){};
