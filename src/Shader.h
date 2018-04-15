@@ -2,6 +2,7 @@
 #include "../lib/glew/glew.h"
 #include "../lib/glfw3/glfw3.h"
 #include "common.h"
+#include "Vertex.h"
 #include "string"
 #include <array>
 #include <fstream>
@@ -17,6 +18,7 @@ class Shader {
     char errorLog[1024];
 
     int vposLoc;
+    int vtexLoc;
 
     // Shader locations
     uint32_t vs;

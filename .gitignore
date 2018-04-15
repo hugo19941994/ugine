@@ -1,1 +1,5 @@
+# Visual Studio
 vc15/.vs
+
+# MacOS
+.DS_Store

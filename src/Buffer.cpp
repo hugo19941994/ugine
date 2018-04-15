@@ -2,6 +2,7 @@
 
 Buffer::Buffer(std::vector<Vertex> vertices, std::vector<int> indices)
     : buffers(), vertices(std::move(vertices)), indices(std::move(indices)) {
+
     // Create OpenGL Vertices & Indices Buffer
     glGenBuffers(2, Buffer::buffers);
 

@@ -42,13 +42,14 @@ Shader::Shader(std::string const &vertexShader, std::string const &fragmentShade
         std::cout << Shader::errorLog << std::endl;
     }
 
-    // TODO: Hacer generico?
     Shader::vposLoc = glGetAttribLocation(Shader::program, "vpos");
+    Shader::vtexLoc = glGetAttribLocation(Shader::program, "vtex");
 }
 
 Shader::~Shader() {
     glDeleteShader(Shader::vs);
     glDeleteShader(Shader::fs);
+	glDeleteProgram(Shader::program);
 }
 
 uint32_t Shader::getId() const { return Shader::program; }
@@ -63,7 +64,14 @@ void Shader::use() const {
 void Shader::setupAttribs() const {
     if (Shader::vposLoc != -1) {
         glEnableVertexAttribArray(Shader::vposLoc);
-        glVertexAttribPointer(vposLoc, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, nullptr);
+        glVertexAttribPointer(vposLoc, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 5, reinterpret_cast<void*>(offsetof(Vertex, position)));
+    } else {
+        std::cout << "setupAttribs failed" << std::endl;
+    }
+
+    if (Shader::vtexLoc != -1) {
+        glEnableVertexAttribArray(Shader::vtexLoc);
+        glVertexAttribPointer(vtexLoc, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 5, reinterpret_cast<void*>(offsetof(Vertex, text_coord)));
     } else {
         std::cout << "setupAttribs failed" << std::endl;
     }

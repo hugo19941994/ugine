@@ -1,12 +1,21 @@
 #ifdef _MSC_VER
-#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
+//#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
 #endif
+
+#define STB_IMAGE_IMPLEMENTATION
 
 #include "../lib/glew/glew.h"
 #include "../lib/glfw3/glfw3.h"
 #include "Buffer.h"
 #include "Shader.h"
 #include "Vertex.h"
+#include "State.h"
+#include "World.h"
+#include "Mesh.h"
+#include "Model.h"
+#include "Camera.h"
+#include "Material.h"
+#include "Entity.h"
 #include "common.h"
 #include <array>
 #include <fstream>
@@ -22,11 +31,33 @@ std::string readString(const char *filename) {
     return ss.str();
 }
 
+bool init() {
+    // Init GLEW
+    if (glewInit() != 0) {
+        std::cout << "could not initialize glew" << std::endl;
+        return false;
+    }
+
+    // Enable OpenGL States
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_SCISSOR_TEST);
+
+	// Read Shaders
+	std::string vertexShader = readString("data/shader.vert");
+	std::string fragmentShader = readString("data/shader.frag");
+	Shader shader(vertexShader, fragmentShader);
+    shader.use();
+
+	State::defaultShader = std::make_shared<Shader>(shader);
+
+	return true;
+}
+
 int main() {
     // Init GLEW
     if (glfwInit() != GLFW_TRUE) {
         std::cout << "could not initalize glfw" << std::endl;
-        return -1;
+        return false;
     }
 
     // Create Window
@@ -40,48 +71,40 @@ int main() {
 
     glfwMakeContextCurrent(window);
 
-    // Init GLEW
-    if (glewInit() != 0) {
-        std::cout << "could not initialize glew" << std::endl;
-        return -1;
-    }
-
-    // Enable OpenGL States
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_SCISSOR_TEST);
+	if (!init()) {
+		return -1;
+	}
 
     atexit(glfwTerminate);
 
-    // Read Shaders
-    std::string vertexShader = readString("data/shader.vert");
-    std::string fragmentShader = readString("data/shader.frag");
-    Shader shader(vertexShader, fragmentShader);
+	// Create World
+	std::shared_ptr<World> world = std::make_shared<World>();
 
-    shader.use();
+	// Create Camera
+	std::shared_ptr<Camera> camera = std::make_shared<Camera>();
+	camera->setPosition(glm::vec3(3, 5, 10));
+	camera->setQuat(glm::rotate(glm::quat(), glm::radians(20.0f), glm::vec3(1.0f, 0.0f, 0.0f)));
+	camera->setClearColor(glm::vec3(0.4, 0.753, 0.898));
 
-    // Triangles
-    std::vector<Vertex> vertices = {Vertex(0.f, 1.f, 0.f), Vertex(-1.f, -1.f, 0.f),
-                                    Vertex(1.f, -1.f, 0.f)};
-    std::vector<int> indices = {0, 1, 2};
-    Buffer buffer(vertices, indices);
+	world->addEntity(camera);
 
-    // Camera matrix (part of MVP)
-    glm::mat4 View =
-        glm::lookAt(glm::vec3(0, 0, 6), // Camera is at (0, 0, 6), in World Space
-                    glm::vec3(0, 0, 0), // and looks at the origin
-                    glm::vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
-        );
+	std::shared_ptr<Mesh> mesh = Mesh::load("data/asian_town.msh.xml");
 
-    // MVP location
-    GLint loc = shader.getLocation("MVP");
+	std::shared_ptr<Model> model = std::make_shared<Model>(mesh);
+	model->setPosition(glm::vec3());
+	model->setQuat(glm::quat());
+	model->setScale(glm::vec3(100.0f, 100.0f, 100.0f));
+
+	world->addEntity(model);
+
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	double lastMX, lastMY;	glfwGetCursorPos(window, &lastMX, &lastMY);
 
     auto lastTime = static_cast<float>(glfwGetTime());
-    float accumulatedTime = 0;
     while (glfwWindowShouldClose(window) == 0 && glfwGetKey(window, GLFW_KEY_ESCAPE) == 0) {
         // Update delta time
         auto newTime = static_cast<float>(glfwGetTime());
         float deltaTime = newTime - lastTime;
-        accumulatedTime += deltaTime;
         lastTime = newTime;
 
         // Get updated screen size
@@ -98,36 +121,47 @@ int main() {
 
         // Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1
         // unit <-> 100 units
-        glm::mat4 Projection = glm::perspective(
+
+		double mouseX, mouseY;		glfwGetCursorPos(window, &mouseX, &mouseY);
+		float speedMX = static_cast<int>(mouseX - lastMX);
+		float speedMY = static_cast<int>(mouseY - lastMY);		lastMX = mouseX;
+		lastMY = mouseY;
+		int up = glfwGetKey(window, GLFW_KEY_W);
+		std::cout << up << std::endl;
+		int left = glfwGetKey(window, GLFW_KEY_A);
+		int down = glfwGetKey(window, GLFW_KEY_S);
+		int right = glfwGetKey(window, GLFW_KEY_D);
+		glm::vec3 pos = camera->getPosition();
+
+		for (int i = 0; i < world->getNumEntities(); ++i) {
+			std::shared_ptr<Camera> isCamera = std::dynamic_pointer_cast<Camera>(world->getEntity(i));
+
+			if (!isCamera) {}
+			else {
+				camera->setEuler(glm::vec3(camera->getEuler().x - speedMY, camera->getEuler().y - speedMX, 0));
+
+				if (up == GLFW_PRESS) {
+					camera->move(glm::vec3(0, 0, -deltaTime * 10));
+				}
+				if (down == GLFW_PRESS) {
+					camera->move(glm::vec3(0, 0, deltaTime * 10));
+				}
+				if (left == GLFW_PRESS) {
+					camera->move(glm::vec3(-deltaTime * 10, 0, 0));
+				}
+				if (right == GLFW_PRESS) {
+					camera->move(glm::vec3(deltaTime * 10, 0, 0));
+				}
+			}
+		}
+
+        camera->setProjection(glm::perspective(
             glm::radians(90.0f), static_cast<float>(screenWidth) / static_cast<float>(screenHeight),
-            0.1f, 100.0f);
+            0.1f, 100.0f));
+		camera->setViewport(glm::ivec4(0, 0, screenWidth, screenHeight));
+		camera->prepare();
 
-        // Clear screen
-        glViewport(0, 0, frameBufferWidth, frameBufferHeight);
-        glScissor(0, 0, frameBufferWidth, frameBufferHeight);
-        glClearColor(0.2f, 0.2f, 0.2f, 1);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // NOLINT
-
-        // Current rotation
-        glm::mat4 Rotation =
-            glm::rotate(glm::mat4(1.0f), glm::radians(32.0f) * accumulatedTime, glm::vec3(0, 1, 0));
-
-        // x axis translation
-        for (int i = -3; i < 6; i += 3) {
-            // z axis translation
-            for (int j = 0; j >= -6; j -= 3) {
-                glm::mat4 Translation = glm::translate(glm::mat4(1.0f), glm::vec3(i, 0, j));
-
-                // Model matrix
-                glm::mat4 Model = Translation * Rotation;
-
-                glm::mat4 MVP = Projection * View * Model; // Remember : inverted !
-                shader.setMatrix(loc, MVP);
-
-                // Draw triangle
-                buffer.draw(shader);
-            }
-        }
+		world->draw();
 
         // Update swap chain & process events
         glfwSwapBuffers(window);
