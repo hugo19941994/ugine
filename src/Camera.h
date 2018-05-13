@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Entity.h"
-#include "State.h"
 
 
 class Camera : public Entity {

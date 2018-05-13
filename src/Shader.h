@@ -19,6 +19,7 @@ class Shader {
 
     int vposLoc;
     int vtexLoc;
+    int vnormalLoc;
 
     // Shader locations
     uint32_t vs;

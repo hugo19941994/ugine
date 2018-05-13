@@ -3,12 +3,13 @@
 #include "common.h"
 #include "Texture.h"
 #include "Shader.h"
-#include "State.h"
 
 class Material  {
 private:
 	std::shared_ptr<Shader> shader;
 	std::shared_ptr<Texture> texture;
+	glm::vec4 color;
+	int shininess;
 public:
 	Material(const std::shared_ptr<Texture>& tex = nullptr,
 		const std::shared_ptr<Shader>& shader = nullptr);
@@ -19,4 +20,8 @@ public:
 	void setTexture(const std::shared_ptr<Texture>& tex);
 	void prepare();
 
+	const glm::vec4& getColor() const;
+	void setColor(const glm::vec4& color);
+	uint8_t getShininess() const;
+	void setShininess(uint8_t shininess);
 };

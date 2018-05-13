@@ -1,8 +1,7 @@
 #include "Camera.h"
-
+#include "State.h"
 
 using namespace glm;
-
 
 const glm::mat4 & Camera::getProjection() const
 {

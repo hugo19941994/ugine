@@ -1,3 +1,3 @@
 #include "Vertex.h"
 
-Vertex::Vertex(float x, float y, float z, float s, float t) : position(x, y, z), text_coord(s, t) {};
+	Vertex::Vertex(const glm::vec3 position, const glm::vec2 coords, const glm::vec3 normal) : position(position), text_coord(coords), normal(normal) {};

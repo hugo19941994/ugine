@@ -135,6 +135,7 @@
     <ClCompile Include="..\src\Buffer.cpp" />
     <ClCompile Include="..\src\Camera.cpp" />
     <ClCompile Include="..\src\Entity.cpp" />
+    <ClCompile Include="..\src\Light.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\Material.cpp" />
     <ClCompile Include="..\src\Mesh.cpp" />
@@ -152,6 +153,7 @@
     <ClInclude Include="..\src\Camera.h" />
     <ClInclude Include="..\src\common.h" />
     <ClInclude Include="..\src\Entity.h" />
+    <ClInclude Include="..\src\Light.h" />
     <ClInclude Include="..\src\Material.h" />
     <ClInclude Include="..\src\Mesh.h" />
     <ClInclude Include="..\src\Model.h" />

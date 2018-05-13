@@ -2,7 +2,6 @@
 #include "common.h"
 #include "Mesh.h"
 #include "Entity.h"
-#include "State.h"
 
 
 class Model : public Entity {

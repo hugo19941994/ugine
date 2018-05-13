@@ -49,9 +49,33 @@ std::shared_ptr<Mesh> Mesh::load(const char * filename, const std::shared_ptr<Sh
 			bufferNode = bufferNode.next_sibling("buffer")) {
 			// Iteramos por todos los buffers 
 
-			// Texture
 			pugi::xml_node materialNode = bufferNode.child("material");
-			std::string textureStr = materialNode.child("texture").text().as_string();
+			Material material;
+
+			// Texture
+			std::string textureStr = "";
+			if (materialNode.child("texture")) {
+				std::string textureStr = materialNode.child("texture").text().as_string();
+				material.setTexture(Texture::load(textureStr.c_str()));
+			}
+
+			// Color
+			if (materialNode.child("color")) {
+				std::string colorStr = materialNode.child("color").text().as_string();
+				std::vector<float> colors = splitStringNumber<float>(colorStr, ',');
+				material.setColor(glm::vec4(
+					colors.at(0),
+					colors.at(1),
+					colors.at(2),
+					colors.at(3)
+				));
+			}
+
+			// Shininess
+			if (materialNode.child("shininess")) {
+				int shininessInt = materialNode.child("shininess").text().as_int();
+				material.setShininess(shininessInt);
+			}
 
 			// Indices
 			std::string indicesNode = bufferNode.child("indices").text().as_string();
@@ -62,26 +86,74 @@ std::shared_ptr<Mesh> Mesh::load(const char * filename, const std::shared_ptr<Sh
 			std::vector<float> coords = splitStringNumber<float>(coordsNode, ',');
 
 			// Texture coords
-			std::string texcoordsNode = bufferNode.child("texcoords").text().as_string();
-			std::vector<float> texcoords = splitStringNumber<float>(texcoordsNode, ',');
+			std::vector<float> texcoords;
+			if (bufferNode.child("texcoords")) {
+				std::string texcoordsNode = bufferNode.child("texcoords").text().as_string();
+				texcoords = splitStringNumber<float>(texcoordsNode, ',');
+			}
+
+			// Normals
+			std::vector<float> normals;
+			if (bufferNode.child("normals")) {
+				std::string normalsNode = bufferNode.child("normals").text().as_string();
+				normals = splitStringNumber<float>(normalsNode, ',');
+			}
 
 			std::vector<Vertex> vertices;
 			Vertex v();
 			for (int i = 0; i < coords.size()/3; i++) {
-				Vertex vertex(
-					coords.at(i * 3),
-					coords.at(i * 3 + 1),
-					coords.at(i * 3 + 2),
-					texcoords.at(i * 2),
-					texcoords.at(i * 2 + 1)
-				);
+				// TODO: para salir del paso...
+				if (normals.size() > 0 && texcoords.size() > 0) {
+					Vertex vertex(
+						glm::vec3(
+							coords.at(i * 3),
+							coords.at(i * 3 + 1),
+							coords.at(i * 3 + 2)),
+						glm::vec2(
+							texcoords.at(i * 2),
+							texcoords.at(i * 2 + 1)),
+						glm::vec3(
+							normals.at(i * 3),
+							normals.at(i * 3 + 1),
+							normals.at(i * 3 + 2)
+						)
+					);
+					vertices.push_back(vertex);
+				}
+				else if (normals.size() == 0) {
+					Vertex vertex(
+						glm::vec3(
+							coords.at(i * 3),
+							coords.at(i * 3 + 1),
+							coords.at(i * 3 + 2)),
+						glm::vec2(
+							texcoords.at(i * 2),
+							texcoords.at(i * 2 + 1)),
+						glm::vec3()
+					);
+					vertices.push_back(vertex);
+				}
+				else {
+					Vertex vertex(
+						glm::vec3(
+							coords.at(i * 3),
+							coords.at(i * 3 + 1),
+							coords.at(i * 3 + 2)),
+						glm::vec2(),
+						glm::vec3(
+							normals.at(i * 3),
+							normals.at(i * 3 + 1),
+							normals.at(i * 3 + 2)
+						)
+					);
+					vertices.push_back(vertex);
+				}
 
-				vertices.push_back(vertex);
 			}
 
 			Buffer buffer(vertices, indices);
 
-			mesh.addBuffer(std::make_shared<Buffer>(buffer), Material(Texture::load(textureStr.c_str())));
+			mesh.addBuffer(std::make_shared<Buffer>(buffer), material);
 		}
 	} else {  
 		// No se ha podido cargar

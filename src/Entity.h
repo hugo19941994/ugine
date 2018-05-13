@@ -1,15 +1,5 @@
 #pragma once
-#include "../lib/glew/glew.h"
-#include "../lib/glfw3/glfw3.h"
-#include "Buffer.h"
-#include "Shader.h"
-#include "Vertex.h"
-#include "State.h"
 #include "common.h"
-#include <array>
-#include <fstream>
-#include <iostream>
-#include <sstream>
 
 class Entity {
 protected:
