@@ -12,6 +12,10 @@ Texture::~Texture() {
 
 std::shared_ptr<Texture> Texture::load(const char * filename) {
 	int width, height;
+
+	// OpenGL expects images bottom to top
+	stbi_set_flip_vertically_on_load(true);
+
 	unsigned char* img = stbi_load(filename, &width, &height, nullptr, 4);
 
 	if (img == nullptr) {
