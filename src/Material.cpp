@@ -85,9 +85,24 @@ void Material::prepare() {
 	}
 
 	// Lights
-	for (int i = 0; i < State::lights.size(); ++i) {
-		State::lights[i]->prepare(i, shader);
+	if (lighting) {
+		for (int i = 0; i < State::lights.size(); ++i) {
+			State::lights[i]->prepare(i, shader);
+		}
 	}
+
+	// Blend Mode
+	if (blendMode == BlendMode::ALPHA) glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	else if (blendMode == BlendMode::ADD) glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+	else if (blendMode == BlendMode::MUL) glBlendFunc(GL_ZERO, GL_SRC_COLOR);
+
+	// Culling
+	if (culling) glEnable(GL_CULL_FACE);
+	else glDisable(GL_CULL_FACE);
+
+	// Depth write
+	if (depthWrite) glDepthMask(GL_TRUE);
+	else glDepthMask(GL_FALSE);
 }
 
 const glm::vec4& Material::getColor() const {
@@ -104,4 +119,37 @@ uint8_t Material::getShininess() const {
 
 void Material::setShininess(uint8_t shininess) {
 	Material::shininess = shininess;
+}
+
+BlendMode Material::getBlendMode() const
+{
+	return BlendMode();
+}
+
+void Material::setBlendMode(BlendMode blendMode) {
+	Material::blendMode = blendMode;
+}
+
+bool Material::getLighting() const {
+	return Material::lighting;
+}
+
+void Material::setLighting(bool enable) {
+	Material::lighting = enable;
+}
+
+bool Material::getCulling() const {
+	return Material::culling;
+}
+
+void Material::setCulling(bool enable) {
+	Material::culling = enable;
+}
+
+bool Material::getDepthWrite() const {
+	return Material::depthWrite;
+}
+
+void Material::setDepthWrite(bool enable) {
+	Material::depthWrite = enable;
 }

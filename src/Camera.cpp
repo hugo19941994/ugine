@@ -40,6 +40,9 @@ void Camera::prepare()
 	State::viewMatrix = glm::rotate(glm::mat4(), -glm::angle(getQuat()), glm::axis(getQuat()));
 	State::viewMatrix = glm::translate(State::viewMatrix, -getPosition());
 
+	// In case a Material has disabled the depth buffer
+	glDepthMask(true);
+
 	glViewport(viewport.x, viewport.y, viewport.z, viewport.w);
 	glScissor(viewport.x, viewport.y, viewport.z, viewport.w);
 

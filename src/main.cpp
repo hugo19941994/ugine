@@ -17,6 +17,7 @@
 #include "Material.h"
 #include "Entity.h"
 #include "Light.h"
+#include "Emitter.h"
 #include "common.h"
 #include <array>
 #include <fstream>
@@ -42,6 +43,7 @@ bool init() {
     // Enable OpenGL States
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_SCISSOR_TEST);
+	glEnable(GL_BLEND);
 
 	// Read Shaders
 	std::string vertexShader = readString("data/vert.glsl");
@@ -83,48 +85,72 @@ int main() {
 
 	// Create Camera
 	std::shared_ptr<Camera> camera = std::make_shared<Camera>();
-	camera->setPosition(glm::vec3(0, 0.2f, 0.2f));
-	camera->setQuat(glm::rotate(glm::quat(), glm::radians(-20.0f), glm::vec3(1.0f, 0.0f, 0.0f)));
-	camera->setClearColor(glm::vec3(0.0, 0.0, 0.0));
+	camera->setClearColor(glm::vec3(0.0f, 0.0f, 0.0f));
+	camera->setPosition(glm::vec3(0.0f, 0.0f, 0.0f));
 
 	world->addEntity(camera);
 
-	std::shared_ptr<Mesh> mesh = Mesh::load("data/bunny.msh.xml");
-
+	// Mesh
+	std::shared_ptr<Mesh> mesh = Mesh::load("data/column.msh.xml");
 	std::shared_ptr<Model> model = std::make_shared<Model>(mesh);
-	model->setQuat(glm::rotate(glm::quat(), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)));
-	model->setPosition(glm::vec3());
-	model->setScale(glm::vec3(1.0f, 1.0f, 1.0f));
-
+	model->setScale(glm::vec3(0.01f, 0.01f, 0.01f));
+	model->setPosition(glm::vec3(0.0f, 0.0f, 0.0f));
 	world->addEntity(model);
 
-	// Lights
-
-	//Lights and ambient
+	// Lights and ambient
 	world->setAmbient(glm::vec3(0.2f, 0.2f, 0.2f));
 
-	std::shared_ptr<Light> pLight = std::make_shared<Light>(Light::Type::POINT, glm::vec3(1, 1, 1));
-	pLight->setColor(glm::vec3(1, 0, 0));
+	std::shared_ptr<Light> pLight = std::make_shared<Light>(Light::Type::POINT, glm::vec3(0, 0, 0));
+	pLight->setColor(glm::vec3(0.5, 0.5, 0.5));
 	pLight->setLinearAttenuation(0.2);
-	pLight->setPosition(glm::vec3(5, 0, 0));
+	pLight->setPosition(glm::vec3(0, 7.0f, -1.0f));
 	world->addEntity(pLight);
 
-	std::shared_ptr<Light> dLight = std::make_shared<Light>(Light::Type::DIRECTIONAL, glm::vec3(1, 1, 1));
-	dLight->setColor(glm::vec3(1, 1, 1));
-	dLight->setPosition(glm::vec3(1, 1, 1));
-	dLight->setLinearAttenuation(0.0f);
-	world->addEntity(dLight);
+	// Emitters
+	Material smoke = Material(Texture::load("data/smoke.png"));
+	smoke.setBlendMode(BlendMode::ALPHA);
+	smoke.setCulling(false);
+	smoke.setDepthWrite(false);
+	smoke.setLighting(false);
+	std::shared_ptr<Emitter> smokeEmitter = std::make_shared<Emitter>(smoke, true);
+	smokeEmitter->setPosition(glm::vec3(0.0f, 6.3f, -0.1f));
+	smokeEmitter->setRateRange(5.0f, 10.0f);
+	smokeEmitter->setLifetimeRange(1.0f, 2.0f);
+	smokeEmitter->setVelocityRange(glm::vec3(-0.1f, 1.0f, -0.1f), glm::vec3(0.1f, 4.0f, 0.1f));
+	smokeEmitter->setSpinVelocityRange(glm::radians(30.0f), glm::radians(60.0f));
+	smokeEmitter->setScaleRange(0.02f, 0.1f);
+	smokeEmitter->setColorRange(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+	smokeEmitter->emit(true);
+	world->addEntity(smokeEmitter);
+
+	Material flame = Material(Texture::load("data/flame.png"));
+	flame.setBlendMode(BlendMode::ADD);
+	flame.setCulling(false);
+	flame.setDepthWrite(false);
+	flame.setLighting(false);
+	std::shared_ptr<Emitter> flameEmitter = std::make_shared<Emitter>(flame, false);
+	flameEmitter->setPosition(glm::vec3(0.0f, 6.1f, -0.1f));
+	flameEmitter->setRateRange(10.0f, 15.0f);
+	flameEmitter->setLifetimeRange(0.5f, 0.7f);
+	flameEmitter->setVelocityRange(glm::vec3(-1.0f, 3.0f, -1.0f), glm::vec3(1.0f, 5.0f, 1.0f));
+	flameEmitter->setSpinVelocityRange(glm::radians(0.0f), glm::radians(0.0f));
+	flameEmitter->setScaleRange(0.015f, 0.05f);
+	flameEmitter->setColorRange(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+	flameEmitter->emit(true);
+	world->addEntity(flameEmitter);
 
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	double lastMX, lastMY;
 	glfwGetCursorPos(window, &lastMX, &lastMY);
 
     auto lastTime = static_cast<float>(glfwGetTime());
+	float accumulatedTime = 0.0f;
     while (glfwWindowShouldClose(window) == 0 && glfwGetKey(window, GLFW_KEY_ESCAPE) == 0) {
         // Update delta time
         auto newTime = static_cast<float>(glfwGetTime());
         float deltaTime = newTime - lastTime;
         lastTime = newTime;
+		accumulatedTime += deltaTime;
 
         // Get updated screen size
         int screenWidth, screenHeight;
@@ -154,18 +180,13 @@ int main() {
 		int right = glfwGetKey(window, GLFW_KEY_D);
 		glm::vec3 pos = camera->getPosition();
 		
-		// Update light position
-		pLight->setQuat(pLight->getQuat() * glm::quat(glm::radians(glm::vec3(0, -30 * deltaTime, 0))));
-		pLight->setPosition(glm::vec3(0, 0, 0));
-		pLight->move(glm::vec3(0, 0, 5));
-
 		for (int i = 0; i < world->getNumEntities(); ++i) {
 			std::shared_ptr<Camera> isCamera = std::dynamic_pointer_cast<Camera>(world->getEntity(i));
 
+			/*
 			if (!isCamera) {}
 			else {
-				/*
-	            camera->setEuler(glm::vec3(camera->getEuler().x - speedMY, camera->getEuler().y - speedMX, 0));
+				camera->setEuler(glm::vec3(camera->getEuler().x - speedMY, camera->getEuler().y - speedMX, 0));
 
 				if (up == GLFW_PRESS) {
 					camera->move(glm::vec3(0, 0, -deltaTime * 2));
@@ -179,10 +200,14 @@ int main() {
 				if (right == GLFW_PRESS) {
 					camera->move(glm::vec3(deltaTime * 2, 0, 0));
 				}
-
-				*/
 			}
+			*/
 		}
+
+		camera->setPosition(glm::vec3(0.0f, 0.0f, 0.0f));
+		camera->setEuler(glm::vec3(-10, accumulatedTime * 25, 0));
+		camera->move(glm::vec3(0.0f, 0.0f, 8.0f));
+		camera->setPosition(glm::vec3(0.0f, 6.0f, 0.0f) + camera->getPosition());
 
         camera->setProjection(glm::perspective(
             glm::radians(90.0f), static_cast<float>(screenWidth) / static_cast<float>(screenHeight),
@@ -190,6 +215,7 @@ int main() {
 		camera->setViewport(glm::ivec4(0, 0, screenWidth, screenHeight));
 		camera->prepare();
 
+		world->update(deltaTime);
 		world->draw();
 
         // Update swap chain & process events
