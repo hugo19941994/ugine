@@ -44,6 +44,7 @@ bool init() {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_SCISSOR_TEST);
 	glEnable(GL_BLEND);
+	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
 	// Read Shaders
 	std::string vertexShader = readString("data/vert.glsl");
@@ -87,57 +88,42 @@ int main() {
 	std::shared_ptr<Camera> camera = std::make_shared<Camera>();
 	camera->setClearColor(glm::vec3(0.0f, 0.0f, 0.0f));
 	camera->setPosition(glm::vec3(0.0f, 0.0f, 0.0f));
-
 	world->addEntity(camera);
 
-	// Mesh
-	std::shared_ptr<Mesh> mesh = Mesh::load("data/column.msh.xml");
-	std::shared_ptr<Model> model = std::make_shared<Model>(mesh);
-	model->setScale(glm::vec3(0.01f, 0.01f, 0.01f));
-	model->setPosition(glm::vec3(0.0f, 0.0f, 0.0f));
-	world->addEntity(model);
+	// Skybox
+	std::shared_ptr<Mesh> meshSkybox = Mesh::load("data/skybox.msh.xml");
+	std::shared_ptr<Model> modelSkybox = std::make_shared<Model>(meshSkybox);
+	modelSkybox->setScale(glm::vec3(1.0f, 1.0f, 1.0f));
+	world->addEntity(modelSkybox);
+
+	// Teapot
+	std::shared_ptr<Mesh> meshTeapot = Mesh::load("data/teapot_reflect.msh.xml");
+	std::shared_ptr<Model> modelTeapot = std::make_shared<Model>(meshTeapot);
+	modelTeapot->setScale(glm::vec3(1.0f, 1.0f, 1.0f));
+	modelTeapot->setPosition(glm::vec3(2.0f, 0.0f, 2.0f));
+	world->addEntity(modelTeapot);
+
+	// Monkey
+	std::shared_ptr<Mesh> meshSuzanne = Mesh::load("data/suzanne_refract.msh.xml");
+	std::shared_ptr<Model> modelSuzanne = std::make_shared<Model>(meshSuzanne);
+	modelSuzanne->setScale(glm::vec3(1.0f, 1.0f, 1.0f));
+	modelSuzanne->setPosition(glm::vec3(-2.0f, 0.0f, 2.0f));
+	world->addEntity(modelSuzanne);
+
+	// Cube
+	std::shared_ptr<Mesh> meshCube = Mesh::load("data/cube.msh.xml");
+	std::shared_ptr<Model> modelCube = std::make_shared<Model>(meshCube);
+	modelCube->setScale(glm::vec3(1.0f, 1.0f, 1.0f));
+	modelCube->setPosition(glm::vec3(0.0f, 0.0f, -1.0f));
+	world->addEntity(modelCube);
 
 	// Lights and ambient
-	world->setAmbient(glm::vec3(0.2f, 0.2f, 0.2f));
+	world->setAmbient(glm::vec3(1.0f, 1.0f, 1.0f));
 
 	std::shared_ptr<Light> pLight = std::make_shared<Light>(Light::Type::POINT, glm::vec3(0, 0, 0));
 	pLight->setColor(glm::vec3(0.5, 0.5, 0.5));
 	pLight->setLinearAttenuation(0.2);
-	pLight->setPosition(glm::vec3(0, 7.0f, -1.0f));
 	world->addEntity(pLight);
-
-	// Emitters
-	Material smoke = Material(Texture::load("data/smoke.png"));
-	smoke.setBlendMode(BlendMode::ALPHA);
-	smoke.setCulling(false);
-	smoke.setDepthWrite(false);
-	smoke.setLighting(false);
-	std::shared_ptr<Emitter> smokeEmitter = std::make_shared<Emitter>(smoke, true);
-	smokeEmitter->setPosition(glm::vec3(0.0f, 6.3f, -0.1f));
-	smokeEmitter->setRateRange(5.0f, 10.0f);
-	smokeEmitter->setLifetimeRange(1.0f, 2.0f);
-	smokeEmitter->setVelocityRange(glm::vec3(-0.1f, 1.0f, -0.1f), glm::vec3(0.1f, 4.0f, 0.1f));
-	smokeEmitter->setSpinVelocityRange(glm::radians(30.0f), glm::radians(60.0f));
-	smokeEmitter->setScaleRange(0.02f, 0.1f);
-	smokeEmitter->setColorRange(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-	smokeEmitter->emit(true);
-	world->addEntity(smokeEmitter);
-
-	Material flame = Material(Texture::load("data/flame.png"));
-	flame.setBlendMode(BlendMode::ADD);
-	flame.setCulling(false);
-	flame.setDepthWrite(false);
-	flame.setLighting(false);
-	std::shared_ptr<Emitter> flameEmitter = std::make_shared<Emitter>(flame, false);
-	flameEmitter->setPosition(glm::vec3(0.0f, 6.1f, -0.1f));
-	flameEmitter->setRateRange(10.0f, 15.0f);
-	flameEmitter->setLifetimeRange(0.5f, 0.7f);
-	flameEmitter->setVelocityRange(glm::vec3(-1.0f, 3.0f, -1.0f), glm::vec3(1.0f, 5.0f, 1.0f));
-	flameEmitter->setSpinVelocityRange(glm::radians(0.0f), glm::radians(0.0f));
-	flameEmitter->setScaleRange(0.015f, 0.05f);
-	flameEmitter->setColorRange(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-	flameEmitter->emit(true);
-	world->addEntity(flameEmitter);
 
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	double lastMX, lastMY;
@@ -183,9 +169,9 @@ int main() {
 		for (int i = 0; i < world->getNumEntities(); ++i) {
 			std::shared_ptr<Camera> isCamera = std::dynamic_pointer_cast<Camera>(world->getEntity(i));
 
-			/*
 			if (!isCamera) {}
 			else {
+				/*
 				camera->setEuler(glm::vec3(camera->getEuler().x - speedMY, camera->getEuler().y - speedMX, 0));
 
 				if (up == GLFW_PRESS) {
@@ -200,14 +186,16 @@ int main() {
 				if (right == GLFW_PRESS) {
 					camera->move(glm::vec3(deltaTime * 2, 0, 0));
 				}
+				*/
 			}
-			*/
 		}
 
 		camera->setPosition(glm::vec3(0.0f, 0.0f, 0.0f));
 		camera->setEuler(glm::vec3(-10, accumulatedTime * 25, 0));
-		camera->move(glm::vec3(0.0f, 0.0f, 8.0f));
-		camera->setPosition(glm::vec3(0.0f, 6.0f, 0.0f) + camera->getPosition());
+		camera->move(glm::vec3(0.0f, 0.0f, 5.0f));
+
+		modelSkybox->setPosition(camera->getPosition());
+		pLight->setPosition(camera->getPosition() + glm::vec3(0.0f, 0.0f, -0.0001f));
 
         camera->setProjection(glm::perspective(
             glm::radians(90.0f), static_cast<float>(screenWidth) / static_cast<float>(screenHeight),

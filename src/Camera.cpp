@@ -39,6 +39,7 @@ void Camera::prepare()
 
 	State::viewMatrix = glm::rotate(glm::mat4(), -glm::angle(getQuat()), glm::axis(getQuat()));
 	State::viewMatrix = glm::translate(State::viewMatrix, -getPosition());
+	State::eyePos = getPosition();
 
 	// In case a Material has disabled the depth buffer
 	glDepthMask(true);

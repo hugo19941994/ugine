@@ -53,10 +53,81 @@ std::shared_ptr<Mesh> Mesh::load(const char * filename, const std::shared_ptr<Sh
 			Material material;
 
 			// Texture
-			std::string textureStr = "";
 			if (materialNode.child("texture")) {
-				std::string textureStr = materialNode.child("texture").text().as_string();
-				material.setTexture(Texture::load(textureStr.c_str()));
+				std::string texturesStr = materialNode.child("texture").text().as_string();
+				std::vector<std::string>textures = splitString(texturesStr, ',');
+				if (textures.size() == 1) {
+					material.setTexture(Texture::load(textures.at(0).c_str()));
+				}
+				else if (textures.size() == 6) {
+					material.setTexture(Texture::load(textures.at(0).c_str(), textures.at(1).c_str(), textures.at(2).c_str(),
+						textures.at(3).c_str(), textures.at(4).c_str(), textures.at(5).c_str()));
+				}
+				else {
+					std::cout << "Error loading texture(s). Pass 6 paths for a cubemap or 1 for a plain texture" << std::endl;
+				}
+			}
+
+			// Normal Texture
+			if (materialNode.child("normal_texture")) {
+				std::string texturesStr = materialNode.child("normal_texture").text().as_string();
+				std::vector<std::string>textures = splitString(texturesStr, ',');
+				if (textures.size() == 1) {
+					material.setNormalTexture(Texture::load(textures.at(0).c_str()));
+				}
+				else {
+					std::cout << "Error loading normal texture(s)" << std::endl;
+				}
+			}
+
+			// Reflection Texture
+			if (materialNode.child("reflect_texture")) {
+				std::string texturesStr = materialNode.child("reflect_texture").text().as_string();
+				std::vector<std::string>textures = splitString(texturesStr, ',');
+				if (textures.size() == 6) {
+					material.setReflectionTexture(Texture::load(textures.at(0).c_str(), textures.at(1).c_str(), textures.at(2).c_str(),
+						textures.at(3).c_str(), textures.at(4).c_str(), textures.at(5).c_str()));
+				}
+				else {
+					std::cout << "Error loading reflection texture(s)" << std::endl;
+				}
+			}
+
+			// Refraction Texture
+			if (materialNode.child("refract_texture")) {
+				std::string texturesStr = materialNode.child("refract_texture").text().as_string();
+				std::vector<std::string>textures = splitString(texturesStr, ',');
+				if (textures.size() == 6) {
+					material.setRefractionTexture(Texture::load(textures.at(0).c_str(), textures.at(1).c_str(), textures.at(2).c_str(),
+						textures.at(3).c_str(), textures.at(4).c_str(), textures.at(5).c_str()));
+				}
+				else {
+					std::cout << "Error loading refraction texture(s)" << std::endl;
+				}
+			}
+
+			// Refraction coefficient
+			if (materialNode.child("refract_coef")) {
+				material.setRefractionCoef(materialNode.child("refract_coef").text().as_float());
+			}
+
+			// Culling
+			if (materialNode.child("culling")) {
+				material.setCulling(materialNode.child("culling").text().as_bool());
+			}
+
+			// Depth write
+			if (materialNode.child("depthwrite")) {
+				material.setDepthWrite(materialNode.child("depthWrite").text().as_bool());
+			}
+
+			// Blend Mode
+			if (materialNode.child("blend")) {
+				std::string blendModeStr = materialNode.child("blend").text().as_string();
+				if (blendModeStr == "alpha") material.setBlendMode(BlendMode::ALPHA);
+				else if (blendModeStr == "add") material.setBlendMode(BlendMode::ADD);
+				else if (blendModeStr == "mul") material.setBlendMode(BlendMode::MUL);
+				else std::cout << "Error setting blend mode" << std::endl;
 			}
 
 			// Color
@@ -75,6 +146,13 @@ std::shared_ptr<Mesh> Mesh::load(const char * filename, const std::shared_ptr<Sh
 			if (materialNode.child("shininess")) {
 				int shininessInt = materialNode.child("shininess").text().as_int();
 				material.setShininess(shininessInt);
+			}
+
+			// Tangents
+			std::vector<float> tangents;
+			if (bufferNode.child("tangents")) {
+				std::string tangentsNode = bufferNode.child("tangents").text().as_string();
+				tangents = splitStringNumber<float>(tangentsNode, ',');
 			}
 
 			// Indices
@@ -100,55 +178,30 @@ std::shared_ptr<Mesh> Mesh::load(const char * filename, const std::shared_ptr<Sh
 			}
 
 			std::vector<Vertex> vertices;
-			Vertex v();
 			for (int i = 0; i < coords.size()/3; i++) {
-				// TODO: para salir del paso...
-				if (normals.size() > 0 && texcoords.size() > 0) {
-					Vertex vertex(
-						glm::vec3(
-							coords.at(i * 3),
-							coords.at(i * 3 + 1),
-							coords.at(i * 3 + 2)),
-						glm::vec2(
-							texcoords.at(i * 2),
-							texcoords.at(i * 2 + 1)),
-						glm::vec3(
-							normals.at(i * 3),
-							normals.at(i * 3 + 1),
-							normals.at(i * 3 + 2)
-						)
-					);
-					vertices.push_back(vertex);
-				}
-				else if (normals.size() == 0) {
-					Vertex vertex(
-						glm::vec3(
-							coords.at(i * 3),
-							coords.at(i * 3 + 1),
-							coords.at(i * 3 + 2)),
-						glm::vec2(
-							texcoords.at(i * 2),
-							texcoords.at(i * 2 + 1)),
-						glm::vec3()
-					);
-					vertices.push_back(vertex);
-				}
-				else {
-					Vertex vertex(
-						glm::vec3(
-							coords.at(i * 3),
-							coords.at(i * 3 + 1),
-							coords.at(i * 3 + 2)),
-						glm::vec2(),
-						glm::vec3(
-							normals.at(i * 3),
-							normals.at(i * 3 + 1),
-							normals.at(i * 3 + 2)
-						)
-					);
-					vertices.push_back(vertex);
+				Vertex vertex = Vertex();
+
+				vertex.position = glm::vec3(coords.at(i * 3), coords.at(i * 3 + 1), coords.at(i * 3 + 2));
+
+				if (normals.size() > 0) {
+					vertex.normal = glm::vec3(normals.at(i * 3), normals.at(i * 3 + 1), normals.at(i * 3 + 2));
+				} else {
+					vertex.normal = glm::vec3();
 				}
 
+				if (texcoords.size() > 0) {
+					vertex.text_coord = glm::vec2(texcoords.at(i * 2), texcoords.at(i * 2 + 1));
+				} else {
+					vertex.text_coord = glm::vec2();
+				}
+
+				if (tangents.size() > 0) {
+					vertex.tangent = glm::vec3(tangents.at(i * 3), tangents.at(i * 3 + 1), tangents.at(i * 3 + 2));
+				} else {
+					vertex.tangent = glm::vec3();
+				}
+
+				vertices.push_back(vertex);
 			}
 
 			Buffer buffer(vertices, indices);

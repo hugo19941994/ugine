@@ -45,6 +45,7 @@ Shader::Shader(std::string const &vertexShader, std::string const &fragmentShade
     Shader::vposLoc = glGetAttribLocation(Shader::program, "vpos");
     Shader::vtexLoc = glGetAttribLocation(Shader::program, "vtex");
     Shader::vnormalLoc = glGetAttribLocation(Shader::program, "vnormal");
+    Shader::vtangentLoc = glGetAttribLocation(Shader::program, "vtangent");
 }
 
 Shader::~Shader() {
@@ -65,23 +66,30 @@ void Shader::use() const {
 void Shader::setupAttribs() const {
     if (Shader::vposLoc != -1) {
         glEnableVertexAttribArray(Shader::vposLoc);
-        glVertexAttribPointer(vposLoc, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, reinterpret_cast<void*>(offsetof(Vertex, position)));
+        glVertexAttribPointer(vposLoc, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 11, reinterpret_cast<void*>(offsetof(Vertex, position)));
     } else {
-        std::cout << "setupAttribs failed" << std::endl;
+        std::cout << "setupAttribs failed vposLoc == -1" << std::endl;
     }
 
     if (Shader::vtexLoc != -1) {
         glEnableVertexAttribArray(Shader::vtexLoc);
-        glVertexAttribPointer(vtexLoc, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 8, reinterpret_cast<void*>(offsetof(Vertex, text_coord)));
+        glVertexAttribPointer(vtexLoc, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 11, reinterpret_cast<void*>(offsetof(Vertex, text_coord)));
     } else {
-        std::cout << "setupAttribs failed" << std::endl;
+        std::cout << "setupAttribs failed vtexLoc == -1" << std::endl;
     }
 
     if (Shader::vnormalLoc != -1) {
         glEnableVertexAttribArray(Shader::vnormalLoc);
-        glVertexAttribPointer(vnormalLoc, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, reinterpret_cast<void*>(offsetof(Vertex, normal)));
+        glVertexAttribPointer(vnormalLoc, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 11, reinterpret_cast<void*>(offsetof(Vertex, normal)));
     } else {
-        std::cout << "setupAttribs failed" << std::endl;
+        std::cout << "setupAttribs failed vnormalLoc == -1" << std::endl;
+    }
+
+    if (Shader::vtangentLoc != -1) {
+        glEnableVertexAttribArray(Shader::vtangentLoc);
+        glVertexAttribPointer(vtangentLoc, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 11, reinterpret_cast<void*>(offsetof(Vertex, tangent)));
+    } else {
+        std::cout << "setupAttribs failed vtangentLoc == -1" << std::endl;
     }
 }
 

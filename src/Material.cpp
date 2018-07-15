@@ -52,6 +52,14 @@ void Material::prepare() {
 	int locNormalMat = shader->getLocation("normalMat");
 	shader->setMatrix(locNormalMat, normalMat);
 
+	// Model matrix
+	int locM = shader->getLocation("M");
+	shader->setMatrix(locM, model);
+
+	// eyePos
+	int locEyePos = shader->getLocation("eyePos");
+	shader->setVec3(locEyePos, State::eyePos);
+
 	// Number of lights
 	int locNumLights = shader->getLocation("numLights");
 	shader->setInt(locNumLights, State::lights.size());
@@ -71,16 +79,22 @@ void Material::prepare() {
 	// Texture
 	int locTS = shader->getLocation("texSampler");
 	shader->setInt(locTS, 0);
+	int locCTS = shader->getLocation("cubeTexSampler");
+	shader->setInt(locCTS, 1);
 
 	int isTexture = shader->getLocation("isTexturized");
-
 	auto texture = getTexture();
-
 	if (texture != nullptr) {
+		int locIsCube = shader->getLocation("isCube");
+		shader->setInt(locIsCube, texture->isCube());
+
 		shader->setInt(isTexture, true);
-		texture->bind();
-	}
-	else {
+		if (!texture->isCube()) {
+			texture->bind(0);
+		} else { //Cube
+			texture->bind(1);
+		}
+	} else {
 		shader->setInt(isTexture, false);
 	}
 
@@ -103,6 +117,43 @@ void Material::prepare() {
 	// Depth write
 	if (depthWrite) glDepthMask(GL_TRUE);
 	else glDepthMask(GL_FALSE);
+
+	// Cubemaps
+	// Reflection
+	auto reflectionTexture = getReflectionTexture();
+	int locReflection = shader->getLocation("reflectionTex");
+	shader->setInt(locReflection, 2);
+	int locHasReflectionTex = shader->getLocation("hasReflectionTex");
+	shader->setInt(locHasReflectionTex, reflectionTexture ? true : false);
+	if (reflectionTexture != nullptr) {
+		reflectionTexture->bind(2);
+	}
+
+	// Refraction
+	auto refractionTexture = getRefractionTexture();
+	int locRefraction = shader->getLocation("refractionTex");
+	shader->setInt(locRefraction, 3);
+	int locHasRefractionTex = shader->getLocation("hasRefractionTex");
+	shader->setInt(locHasRefractionTex, refractionTexture ? true : false);
+	if (refractionTexture != nullptr) {
+		refractionTexture->bind(3);
+
+		// Refraction coefficient
+		int locRefractionCoef = shader->getLocation("refractionCoef");
+		shader->setFloat(locRefractionCoef, refractionCoef);
+	}
+
+
+	// Normal
+	auto normalTexture = getNormalTexture();
+	int locNormalTex = shader->getLocation("normalTex");
+	shader->setInt(locNormalTex, 4);
+	int locHasNormalTex = shader->getLocation("hasNormalTex");
+	shader->setInt(locHasNormalTex, normalTexture ? true : false);
+	if (normalTexture != nullptr) {
+			normalTexture->bind(4);
+	}
+
 }
 
 const glm::vec4& Material::getColor() const {
@@ -152,4 +203,36 @@ bool Material::getDepthWrite() const {
 
 void Material::setDepthWrite(bool enable) {
 	Material::depthWrite = enable;
+}
+
+const std::shared_ptr<Texture>& Material::getReflectionTexture() const {
+	return Material::reflectionTexture;
+}
+
+void Material::setReflectionTexture(const std::shared_ptr<Texture>& tex) {
+	reflectionTexture = tex;
+}
+
+const std::shared_ptr<Texture>& Material::getRefractionTexture() const {
+	return refractionTexture;
+}
+
+void Material::setRefractionTexture(const std::shared_ptr<Texture>& tex) {
+	refractionTexture = tex;
+}
+
+const std::shared_ptr<Texture>& Material::getNormalTexture() const {
+	return normalTexture;
+}
+
+void Material::setNormalTexture(const std::shared_ptr<Texture>& tex) {
+	normalTexture = tex;
+}
+
+float Material::getRefractionCoef() const {
+	return refractionCoef;
+}
+
+void Material::setRefractionCoef(float coef) {
+	refractionCoef = coef;
 }
