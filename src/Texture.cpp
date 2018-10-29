@@ -1,6 +1,38 @@
 #include "Texture.h"
 
-Texture::Texture(uint32_t id, uint32_t width, uint32_t height, bool cube) : id(id), width(width), height(height), cube(cube) {}
+Texture::Texture(uint32_t id, uint32_t width, uint32_t height, bool cube) : id(id), width(width), height(height), cube(cube), depth(false) {}
+
+Texture::Texture(uint16_t width, uint16_t height, bool isDepth) : cube(false), depth(isDepth), width(width), height(height) {
+	glGenTextures(1, &id);
+	glBindTexture(GL_TEXTURE_2D, id);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, isDepth ? GL_DEPTH_COMPONENT24 : GL_RGBA, width, height, 0, isDepth ? GL_DEPTH_COMPONENT : GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+	GLuint clearColor[4] = { 0, 0, 0, 0 };
+	glClearTexImage(id, 0, GL_BGRA, GL_UNSIGNED_BYTE, &clearColor);
+
+}
+
+// TODO: 
+Texture::Texture(uint16_t width, uint16_t height, GLint format) {
+	cube = false;
+	depth = false;
+	glGenTextures(1, &id);
+	glBindTexture(GL_TEXTURE_2D, id);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, width, height, 0, GL_RG, GL_FLOAT, nullptr);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+}
 
 Texture::~Texture() {
 	if (Texture::id != 0) {
@@ -121,4 +153,8 @@ std::shared_ptr<Texture> Texture::load(const char * left, const char * right, co
 
 bool Texture::isCube() const {
 	return Texture::cube;
+}
+
+bool Texture::isDepth() const {
+	return depth;
 }

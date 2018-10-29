@@ -69,6 +69,9 @@
     <ClCompile Include="..\src\Emitter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\Framebuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\lib\glew\glew.h">
@@ -134,5 +137,17 @@
     <ClInclude Include="..\src\Emitter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\Framebuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\data\frag.glsl" />
+    <None Include="..\data\vert.glsl" />
+    <None Include="..\data\vertPP.glsl" />
+    <None Include="..\data\fragPP.glsl" />
+    <None Include="..\data\fragAA.glsl" />
+    <None Include="..\data\fragVel.glsl" />
+    <None Include="..\data\vertVel.glsl" />
   </ItemGroup>
 </Project>

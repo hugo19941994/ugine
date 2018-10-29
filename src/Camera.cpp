@@ -3,38 +3,40 @@
 
 using namespace glm;
 
-const glm::mat4 & Camera::getProjection() const
-{
+Camera::Camera() {
+}
+
+const glm::mat4 & Camera::getProjection() const {
 	return Camera::projection;
 }
 
-void Camera::setProjection(const glm::mat4 & proj)
-{
+void Camera::setProjection(const glm::mat4 & proj) {
 	projection = proj;
 }
 
-const glm::ivec4 & Camera::getViewport() const
-{
+const glm::ivec4 & Camera::getViewport() const {
 	return Camera::viewport;
 }
 
-void Camera::setViewport(const glm::ivec4 & vp)
-{
+void Camera::setViewport(const glm::ivec4 & vp) {
 	viewport = vp;
 }
 
-const glm::vec3 & Camera::getClearColor() const
-{
+const glm::vec3 & Camera::getClearColor() const {
 	return Camera::clearColor;
 }
 
-void Camera::setClearColor(const glm::vec3 & color)
-{
+void Camera::setClearColor(const glm::vec3 & color) {
 	clearColor = color;
 }
 
-void Camera::prepare()
-{
+void Camera::prepare() {
+	// For velocity buffers - Store old View & Projection matrix
+	State::prevModelMatrix = mat4(State::modelMatrix);
+	State::prevViewMatrix = mat4(State::viewMatrix);
+	State::prevProjectionMatrix = mat4(State::projectionMatrix);
+
+	// New matrices
 	State::projectionMatrix = projection;
 
 	State::viewMatrix = glm::rotate(glm::mat4(), -glm::angle(getQuat()), glm::axis(getQuat()));

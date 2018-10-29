@@ -25,6 +25,8 @@
 #include <sstream>
 
 #define FULLSCREEN false
+bool MOVE = true;
+#define TAA false
 
 std::string readString(const char *filename) {
     std::ifstream f(filename, std::ios_base::binary);
@@ -52,9 +54,46 @@ bool init() {
 	Shader shader(vertexShader, fragmentShader);
     shader.use();
 
+	// Postprocess shader
+	std::string vertexPPShader = readString("data/vertPP.glsl");
+	std::string fragmentAAShader = readString("data/fragAA.glsl");
+	std::string fragmentPPShader = readString("data/fragPP.glsl");
+	Shader AAShader(vertexPPShader, fragmentAAShader);
+	Shader finalShader(vertexPPShader, fragmentPPShader);
+
 	State::defaultShader = std::make_shared<Shader>(shader);
+	State::AAShader = std::make_shared<Shader>(AAShader);
+	State::finalShader = std::make_shared<Shader>(finalShader);
+
+	// Velocity shader for motion vectors
+	std::string vertexVelShader = readString("data/vertVel.glsl");
+	std::string fragmentVelShader = readString("data/fragVel.glsl");
+	Shader velShader(vertexVelShader, fragmentVelShader);
+	State::velShader = std::make_shared<Shader>(velShader);
+
+	State::frame = 0;
+	State::jitter = ((float)rand() / RAND_MAX) - 0.5f;
 
 	return true;
+}
+
+void PPMWriter(unsigned char *in, char *name, int dimx, int dimy) {
+	int i, j;
+	FILE *fp;
+	int r = fopen_s(&fp, name, "wb"); /* b - binary mode */
+	(void)fprintf(fp, "P6\n%d %d\n255\n", dimx, dimy);
+	for (j = 0; j < dimy; ++j)
+	{
+		for (i = 0; i < dimx; ++i)
+		{
+			static unsigned char color[3];
+			color[0] = in[3 * i + 3 * j*dimy];  /* red */
+			color[1] = in[3 * i + 3 * j*dimy + 1];  /* green */
+			color[2] = in[3 * i + 3 * j*dimy + 2];  /* blue */
+			(void)fwrite(color, 1, 3, fp);
+		}
+	}
+	(void)fclose(fp);
 }
 
 int main() {
@@ -65,8 +104,11 @@ int main() {
     }
 
     // Create Window
-    GLFWwindow *window = glfwCreateWindow(800, 600, "U-gine",
+	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+    GLFWwindow *window = glfwCreateWindow(1920, 1080, "U-gine",
                                           FULLSCREEN ? glfwGetPrimaryMonitor() : nullptr, nullptr);
+	glfwMakeContextCurrent(window);
+	glfwSwapInterval(0);
 
     if (window == nullptr) {
         std::cout << "could not create glfw window" << std::endl;
@@ -87,7 +129,7 @@ int main() {
 	// Create Camera
 	std::shared_ptr<Camera> camera = std::make_shared<Camera>();
 	camera->setClearColor(glm::vec3(0.0f, 0.0f, 0.0f));
-	camera->setPosition(glm::vec3(0.0f, 0.0f, 0.0f));
+	camera->setPosition(glm::vec3(0.0f, 0.0f, 5.0f));
 	world->addEntity(camera);
 
 	// Skybox
@@ -125,9 +167,10 @@ int main() {
 	pLight->setLinearAttenuation(0.2);
 	world->addEntity(pLight);
 
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	double lastMX, lastMY;
 	glfwGetCursorPos(window, &lastMX, &lastMY);
+
 
     auto lastTime = static_cast<float>(glfwGetTime());
 	float accumulatedTime = 0.0f;
@@ -165,13 +208,15 @@ int main() {
 		int down = glfwGetKey(window, GLFW_KEY_S);
 		int right = glfwGetKey(window, GLFW_KEY_D);
 		glm::vec3 pos = camera->getPosition();
+
+		// Enable & disable move
+		int m = glfwGetKey(window, GLFW_KEY_M);
+		if (m) MOVE = !MOVE;
 		
 		for (int i = 0; i < world->getNumEntities(); ++i) {
 			std::shared_ptr<Camera> isCamera = std::dynamic_pointer_cast<Camera>(world->getEntity(i));
-
-			if (!isCamera) {}
-			else {
-				/*
+			if (isCamera && MOVE) {
+				// Mouse & WASD
 				camera->setEuler(glm::vec3(camera->getEuler().x - speedMY, camera->getEuler().y - speedMX, 0));
 
 				if (up == GLFW_PRESS) {
@@ -186,13 +231,14 @@ int main() {
 				if (right == GLFW_PRESS) {
 					camera->move(glm::vec3(deltaTime * 2, 0, 0));
 				}
-				*/
 			}
 		}
 
-		camera->setPosition(glm::vec3(0.0f, 0.0f, 0.0f));
-		camera->setEuler(glm::vec3(-10, accumulatedTime * 25, 0));
-		camera->move(glm::vec3(0.0f, 0.0f, 5.0f));
+		// Rotation
+		//camera->setPosition(glm::vec3(0.0f, 0.0f, 0.0f));
+		//camera->setEuler(glm::vec3(accumulatedTime * 20, -10, 0));
+		//camera->move(glm::vec3(0.0f, 0.0f, 5.0f));
+		//modelTeapot->setEuler(glm::vec3(-10, accumulatedTime * 10000, 0));
 
 		modelSkybox->setPosition(camera->getPosition());
 		pLight->setPosition(camera->getPosition() + glm::vec3(0.0f, 0.0f, -0.0001f));
@@ -201,14 +247,38 @@ int main() {
             glm::radians(90.0f), static_cast<float>(screenWidth) / static_cast<float>(screenHeight),
             0.1f, 100.0f));
 		camera->setViewport(glm::ivec4(0, 0, screenWidth, screenHeight));
-		camera->prepare();
+
+		//camera->prepare();
+		glDepthMask(true);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		State::frame = ++State::frame % 4;
+		State::jitter = ((float)rand() / RAND_MAX) - 0.5f;
 
 		world->update(deltaTime);
 		world->draw();
 
+		// TEST - save framebuffer
+		/*
+		int texture = world->currentAATexture->getId();
+		if (texture != 0) {
+			std::cout << texture << std::endl;
+			unsigned char *buff = new unsigned char[1920 * 1080 * 3];
+			glReadBuffer(texture);
+			glReadPixels(0, 0, 1920, 1080, GL_RGB, GL_UNSIGNED_BYTE, buff);
+			char tval[] = "h.ppm";
+			PPMWriter(buff, tval, 1920, 1080);
+			//FILE *out;
+			//errno_t r = fopen_s(&out, "test.bmp", "wb");
+			//fwrite(buff, 3, 640 * 480, out);
+			//delete[] buff;
+		}
+		*/
+
         // Update swap chain & process events
         glfwSwapBuffers(window);
         glfwPollEvents();
+
     }
 
     return 0;

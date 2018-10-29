@@ -9,6 +9,7 @@ const glm::vec3 & Entity::getPosition() const
 
 void Entity::setPosition(const glm::vec3 & pos)
 {
+	Entity::prevPosition = position;
 	Entity::position = pos;
 }
 

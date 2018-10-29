@@ -27,6 +27,20 @@ void Material::setTexture(const std::shared_ptr<Texture>& tex) {
 	Material::texture = tex;
 }
 
+// TODO: MOVE
+float Halton(int Index, int Base) {
+	float Result = 0.0f;
+	float InvBase = 1.0f / Base;
+	float Fraction = InvBase;
+	while (Index > 0)
+	{
+		Result += (Index % Base) * Fraction;
+		Index /= Base;
+		Fraction *= InvBase;
+	}
+	return Result;
+}
+
 void Material::prepare() {
 	auto shader = getShader();
 	shader->use();
@@ -34,10 +48,13 @@ void Material::prepare() {
 	glm::mat4 model = State::modelMatrix;
 	glm::mat4 view = State::viewMatrix;
 	glm::mat4 projection = State::projectionMatrix;
+	projection[0, 2] += (Halton(State::frame + 1, 2) - 0.5f) / 1920;
+	projection[1, 2] += (Halton(State::frame + 1, 3) - 0.5f) / 1080;
 
 	glm::mat4 MVP = projection * view * model;
 	glm::mat4 MV = view * model;
 	glm::mat4 normalMat = glm::transpose(glm::inverse(MV));
+
 
 	// Model View Projection matrix
 	int locMVP = shader->getLocation("MVP");
@@ -143,7 +160,6 @@ void Material::prepare() {
 		shader->setFloat(locRefractionCoef, refractionCoef);
 	}
 
-
 	// Normal
 	auto normalTexture = getNormalTexture();
 	int locNormalTex = shader->getLocation("normalTex");
@@ -153,7 +169,6 @@ void Material::prepare() {
 	if (normalTexture != nullptr) {
 			normalTexture->bind(4);
 	}
-
 }
 
 const glm::vec4& Material::getColor() const {

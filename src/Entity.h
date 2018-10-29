@@ -3,7 +3,7 @@
 
 class Entity {
 protected:
-	glm::vec3 position, scale, m_euler;
+	glm::vec3 position, scale, m_euler, prevPosition;
 	glm::quat m_quat;
 
 public:

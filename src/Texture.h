@@ -11,9 +11,13 @@ private:
 	uint32_t id, width, height;
 	std::shared_ptr<void*> img;
 	bool cube;
+	bool depth;
 
 public:
 	Texture(uint32_t id, uint32_t width, uint32_t height, bool isCube);
+	Texture(uint16_t width, uint16_t height, bool isDepth = false);
+	Texture(uint16_t width, uint16_t height, GLint format);
+
     ~Texture();
 
 	static std::shared_ptr<Texture>	load(const char* filename);
@@ -27,4 +31,5 @@ public:
 		const char* top, const char* bottom);
 	bool isCube() const;
 
+	bool isDepth() const;
 };

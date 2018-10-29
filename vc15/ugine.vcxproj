@@ -137,6 +137,7 @@
     <ClCompile Include="..\src\Camera.cpp" />
     <ClCompile Include="..\src\Emitter.cpp" />
     <ClCompile Include="..\src\Entity.cpp" />
+    <ClCompile Include="..\src\Framebuffer.cpp" />
     <ClCompile Include="..\src\Light.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\Material.cpp" />
@@ -159,6 +160,7 @@
     <ClInclude Include="..\src\common.h" />
     <ClInclude Include="..\src\Emitter.h" />
     <ClInclude Include="..\src\Entity.h" />
+    <ClInclude Include="..\src\Framebuffer.h" />
     <ClInclude Include="..\src\Light.h" />
     <ClInclude Include="..\src\Material.h" />
     <ClInclude Include="..\src\Mesh.h" />
@@ -172,6 +174,15 @@
     <ClInclude Include="..\src\Texture.h" />
     <ClInclude Include="..\src\Vertex.h" />
     <ClInclude Include="..\src\World.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\data\frag.glsl" />
+    <None Include="..\data\fragAA.glsl" />
+    <None Include="..\data\fragPP.glsl" />
+    <None Include="..\data\fragVel.glsl" />
+    <None Include="..\data\vert.glsl" />
+    <None Include="..\data\vertPP.glsl" />
+    <None Include="..\data\vertVel.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
